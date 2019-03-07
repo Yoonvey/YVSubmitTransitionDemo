@@ -92,10 +92,15 @@
     {
         [self shrink];
         __weak typeof(self) weakSelf = self;
-        [NSTimer scheduledTimerWithTimeInterval:self.shrinkDuration repeats:false block:^(NSTimer * _Nonnull timer)
+        if (@available(iOS 10.0, *)) {
+            [NSTimer scheduledTimerWithTimeInterval:self.shrinkDuration repeats:false block:^(NSTimer * _Nonnull timer) {
+                [weakSelf.spiner startAnimation];
+            }];
+        }
+        else
         {
-            [weakSelf.spiner startAnimation];
-        }];
+            [NSTimer scheduledTimerWithTimeInterval:self.shrinkDuration target:self selector:@selector(spinerStartAnimation) userInfo:nil repeats:false];
+        }
     }];
 }
 
@@ -109,13 +114,24 @@
 /// 开始结束动画
 - (void)startFinishAnimation:(NSTimeInterval)delay completion:(void(^)(void))completion
 {
+    self.didEndFinishAnimation = completion;
     __weak typeof(self) weakSelf = self;
-    [NSTimer scheduledTimerWithTimeInterval:delay repeats:false block:^(NSTimer * _Nonnull timer)
+    if (@available(iOS 10.0, *))
     {
-        weakSelf.didEndFinishAnimation = completion;
-        [weakSelf expand];
-        [weakSelf.spiner stopAnimation];
-    }];
+        [NSTimer scheduledTimerWithTimeInterval:delay repeats:false block:^(NSTimer * _Nonnull timer) {
+            [weakSelf finishAnimation];
+        }];
+    }
+    else
+    {
+        [NSTimer scheduledTimerWithTimeInterval:delay target:self selector:@selector(finishAnimation) userInfo:nil repeats:false];
+    }
+}
+
+- (void)finishAnimation
+{
+    [self expand];
+    [self spinerStopAnimation];
 }
 
 /// 重置状态
@@ -125,6 +141,16 @@
     self.layer.cornerRadius = self.currentCornerRadius;
     [self.layer removeAllAnimations];
     [self setTitle:self.cachedTitle forState:self.state];
+    [self.spiner stopAnimation];
+}
+
+- (void)spinerStartAnimation
+{
+    [self.spiner startAnimation];
+}
+
+- (void)spinerStopAnimation
+{
     [self.spiner stopAnimation];
 }
 
@@ -168,10 +194,15 @@
             self.didEndFinishAnimation();
         }
         __weak typeof(self) weakSelf = self;
-        [NSTimer scheduledTimerWithTimeInterval:0.3 repeats:false block:^(NSTimer * _Nonnull timer)
+        if (@available(iOS 10.0, *)) {
+            [NSTimer scheduledTimerWithTimeInterval:0.3 repeats:false block:^(NSTimer * _Nonnull timer) {
+                [weakSelf returnToOriginalState];
+            }];
+        }
+        else
         {
-            [weakSelf returnToOriginalState];
-        }];
+            [NSTimer scheduledTimerWithTimeInterval:0.3 target:self selector:@selector(returnToOriginalState) userInfo:nil repeats:false];
+        }
     }
 }
 
